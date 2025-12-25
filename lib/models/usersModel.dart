@@ -1,3 +1,6 @@
+// === Andhika ===
+
+//Atribut data
 class Users {
   final String idUser;
   final String name;
@@ -5,6 +8,7 @@ class Users {
   final String password;
   final DateTime createdAt;
 
+  //Konstruktor
   Users({
     required this.idUser,
     required this.name,
@@ -13,9 +17,10 @@ class Users {
     required this.createdAt,
   });
 
+  //Method
   factory Users.fromJson(Map<String, dynamic> json) {
     return Users(
-      idUser: json['idUser'],
+      idUser: json['id_User'],
       name: json['name'],
       email: json['email'],
       password: json['password'],
@@ -25,7 +30,7 @@ class Users {
 
   Map<String, dynamic> toJson() {
     return {
-      'idUser': idUser,
+      'id_User': idUser,
       'name': name,
       'email': email,
       'password': password,
