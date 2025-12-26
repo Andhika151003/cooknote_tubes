@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "893950515224",
+    "project_id": "cooknote-48e17",
+    "storage_bucket": "cooknote-48e17.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:893950515224:android:24c748f7a587bee1824b6d",
+        "android_client_info": {
+          "package_name": "com.example.cooknote"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBMqSFvbQaVRsEEou-1H906RpPAAdHQtMY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

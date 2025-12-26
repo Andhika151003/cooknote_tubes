@@ -5,6 +5,8 @@ class Recipes {
   final String categories_Id;
   final String bahan;
   final String langkah;
+  final String waktu;
+  final String kesulitan;
   final String image_url;
   final DateTime created_at;
   final DateTime uploaded_at;
@@ -16,6 +18,8 @@ class Recipes {
     required this.categories_Id,
     required this.bahan,
     required this.langkah,
+    required this.waktu,
+    required this.kesulitan,
     required this.image_url,
     required this.created_at,
     required this.uploaded_at,
@@ -29,6 +33,8 @@ class Recipes {
       categories_Id: json['categories_Id'],
       bahan: json['bahan'],
       langkah: json['langkah'],
+      waktu: json['waktu'],
+      kesulitan: json['kesulitan'],
       image_url: json['image_url'],
       created_at: json['created_at'],
       uploaded_at: json['uploaded_at'],
@@ -43,6 +49,8 @@ class Recipes {
       'categories_Id': categories_Id,
       'bahan': bahan,
       'langkah': langkah,
+      'waktu': waktu,
+      'kesulitan': kesulitan,
       'image_url': image_url,
       'created_at': created_at,
       'uploaded_at': uploaded_at,
