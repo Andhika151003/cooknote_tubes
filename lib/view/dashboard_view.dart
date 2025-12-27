@@ -30,10 +30,7 @@ class DashboardView extends StatelessWidget {
           children: [
             const Text(
               "Masak apa hari ini?",
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
 
@@ -79,7 +76,7 @@ class DashboardView extends StatelessWidget {
                                 top: Radius.circular(16),
                               ),
                               child: Image.network(
-                                recipe.image_url,
+                                recipe.imageurl,
                                 width: double.infinity,
                                 fit: BoxFit.cover,
                                 errorBuilder: (_, __, ___) =>
@@ -115,9 +112,7 @@ class DashboardView extends StatelessWidget {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (_) => const TambahView(),
-            ),
+            MaterialPageRoute(builder: (_) => const TambahView()),
           );
         },
       ),
@@ -126,14 +121,8 @@ class DashboardView extends StatelessWidget {
         currentIndex: 0,
         selectedItemColor: Colors.green,
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: "Home",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: "Profile",
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],
         onTap: (index) {
           if (index == 1) {

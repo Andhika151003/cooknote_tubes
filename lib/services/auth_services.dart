@@ -1,3 +1,5 @@
+//Andhika
+
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/users_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -58,7 +60,7 @@ class AuthServices {
     return null;
   }
 
-  // Fungsi Logout (Opsional, buat nanti)
+  // Fungsi Logout
   Future<void> logout() async {
     await _auth.signOut();
   }

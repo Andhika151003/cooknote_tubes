@@ -1,3 +1,5 @@
+//Andhika
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/categories_model.dart';
 import 'package:flutter/foundation.dart';
@@ -13,7 +15,6 @@ class CategoriesServices {
       return snapshot.docs.map((doc) {
         Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
 
-        // Pastikan key ini sesuai dengan model kamu (idCategories/id)
         data['id'] = doc.id;
 
         return Categories.fromJson(data);
