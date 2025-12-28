@@ -1,4 +1,5 @@
 // === Andhika ===
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 //Atribut data
 class Users {
@@ -24,7 +25,9 @@ class Users {
       name: json['name'],
       email: json['email'],
       password: json['password'],
-      createdAt: json['createdAt'],
+      createdAt: json['createdAt'] is Timestamp
+          ? (json['createdAt'] as Timestamp).toDate()
+          : DateTime.now(),
     );
   }
 
