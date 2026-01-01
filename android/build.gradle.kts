@@ -1,9 +1,8 @@
 plugins {
-  // ...
-
-  // Add the dependency for the Google services Gradle plugin
-  id("com.google.gms.google-services") version "4.4.4" apply false
-
+    id("com.android.application")
+    id("kotlin-android")
+    id("dev.flutter.flutter-gradle-plugin")
+    id("com.google.gms.google-services") version "4.4.4" apply false
 }
 
 allprojects {

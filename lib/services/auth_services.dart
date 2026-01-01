@@ -1,5 +1,4 @@
-//Andhika
-
+// Andhika
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/users_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -9,11 +8,24 @@ class AuthServices {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
+  // Mendapatkan User dari Firebase Auth
   User? getCurrentUser() {
     return _auth.currentUser;
   }
 
-  // fungsi login
+  // Fungsi untuk mendapatkan data profil lengkap dari Firestore
+  Future<Users?> getUserProfile(String uid) async {
+    try {
+      DocumentSnapshot doc = await _db.collection('users').doc(uid).get();
+      if (doc.exists) {
+        return Users.fromJson(doc.data() as Map<String, dynamic>);
+      }
+    } catch (e) {
+      debugPrint("Error Get Profile: $e");
+    }
+    return null;
+  }
+
   Future<User?> login(String email, String password) async {
     try {
       UserCredential result = await _auth.signInWithEmailAndPassword(
@@ -27,10 +39,9 @@ class AuthServices {
     }
   }
 
-  // fungsi register
   Future<User?> register(String name, String email, String password) async {
     try {
-      // 1. Buat akun di Authentication
+      // 1. Buat akun di Firebase Authentication
       UserCredential result = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
@@ -38,17 +49,16 @@ class AuthServices {
 
       User? user = result.user;
 
-      // 2. Simpan Biodata ke Firestore
       if (user != null) {
+        // 2. Buat objek model (Tanpa menyimpan password ke Firestore)
         Users newUser = Users(
           idUser: user.uid,
           name: name,
           email: email,
-          password: password,
           createdAt: DateTime.now(),
         );
 
-        // Simpan dengan ID yang sama dengan UID Auth
+        // 3. Simpan ke koleksi 'users' dengan ID Dokumen = UID User
         await _db.collection('users').doc(user.uid).set(newUser.toJson());
 
         return user;
@@ -60,7 +70,6 @@ class AuthServices {
     return null;
   }
 
-  // Fungsi Logout
   Future<void> logout() async {
     await _auth.signOut();
   }

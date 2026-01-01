@@ -1,125 +1,239 @@
+import 'package:cloud_firestore/cloud_firestore.dart'; // Tambahan import
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'firebase_options.dart';
+
+import 'services/auth_services.dart';
+import 'services/recipes_services.dart';
+import 'services/categories_services.dart';
+import 'models/recipes_model.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      debugShowCheckedModeBanner: false,
+      title: 'Cooknote Relasi Fix',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.purple),
+        useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const TestPage(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class TestPage extends StatefulWidget {
+  const TestPage({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<TestPage> createState() => _TestPageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _TestPageState extends State<TestPage> {
+  final AuthServices _authServices = AuthServices();
+  final RecipesServices _recipesServices = RecipesServices();
+  final CategoriesServices _categoriesServices = CategoriesServices();
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+  User? _currentUser;
+  String _statusLog = "Siap.";
+  bool _isLoading = false;
+
+  // VAR PENTING: Untuk menyimpan ID asli dari Firestore (Foreign Key)
+  String? _realCategoryId;
+  String? _realCategoryName;
+
+  @override
+  void initState() {
+    super.initState();
+    FirebaseAuth.instance.authStateChanges().listen((User? user) {
+      setState(() => _currentUser = user);
     });
+  }
+
+  // 1. LOGIN
+  Future<void> _runLogin() async {
+    setState(() {
+      _isLoading = true;
+      _statusLog = "Sedang Login...";
+    });
+
+    // Login user dummy
+    User? user = await _authServices.login(
+      "test_user01@example.com",
+      "password123",
+    );
+    if (user == null) {
+      user = await _authServices.register(
+        "User Relasi",
+        "test_user01@example.com",
+        "password123",
+      );
+    }
+
+    setState(() {
+      _isLoading = false;
+      _statusLog = user != null ? "Login OK: ${user.email}" : "Login Gagal.";
+    });
+  }
+
+  // 2. INIT & AMBIL ID KATEGORI (SOLUSI MASALAH ANDA)
+  Future<void> _runInitAndFetchCategory() async {
+    setState(() {
+      _isLoading = true;
+      _statusLog = "Mencari Kategori...";
+    });
+
+    try {
+      // a. Pastikan kategori dibuat dulu
+      await _categoriesServices.initDefaultCategories();
+
+      // b. AMBIL SATU KATEGORI DARI DATABASE (Fetch Real ID)
+      //    Kita cari kategori yg namanya 'Lunch' atau ambil yg pertama aja
+      QuerySnapshot snapshot = await FirebaseFirestore.instance
+          .collection('categories')
+          .get();
+
+      if (snapshot.docs.isNotEmpty) {
+        // Ambil dokumen pertama sebagai contoh relasi
+        var doc = snapshot.docs.first;
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+
+        setState(() {
+          // INI DIA FOREIGN KEY YANG ASLI
+          _realCategoryId = doc.id;
+          _realCategoryName = data['name'];
+
+          _statusLog =
+              "RELASI DITEMUKAN!\n\n"
+              "Nama Kategori: $_realCategoryName\n"
+              "ID Kategori (Foreign Key): $_realCategoryId\n\n"
+              "Siap dipakai untuk input resep.";
+        });
+      } else {
+        setState(
+          () => _statusLog = "Aneh, kategori kosong padahal sudah di-init.",
+        );
+      }
+    } catch (e) {
+      setState(() => _statusLog = "Error Fetch Kategori: $e");
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  // 3. INPUT RESEP DENGAN RELASI YANG BENAR
+  Future<void> _runInputData() async {
+    if (_currentUser == null) {
+      setState(() => _statusLog = "Belum Login!");
+      return;
+    }
+    if (_realCategoryId == null) {
+      setState(
+        () => _statusLog = "STOP: Klik tombol 2 dulu untuk ambil ID Kategori.",
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _statusLog = "Menyimpan Resep...";
+    });
+
+    try {
+      Recipes dummyRecipe = Recipes(
+        idRecipes: "",
+        idUser: _currentUser!.uid, // Foreign Key ke User (Otomatis dari Auth)
+        title: "Sate Padang Relasi Valid",
+
+        // DISINI KUNCINYA: Pakai ID asli yang kita ambil tadi
+        categoriesId: _realCategoryId!,
+
+        bahan: "Daging Sapi, Tepung Beras",
+        langkah: "1. Bakar sate. 2. Siram kuah.",
+        waktu: "45 Menit",
+        kesulitan: "Sulit",
+        imageUrl: "https://via.placeholder.com/150",
+        createdAt: DateTime.now(),
+        uploadedAt: DateTime.now(),
+      );
+
+      await _recipesServices.addRecipe(dummyRecipe);
+
+      setState(
+        () => _statusLog =
+            "SUKSES SEMPURNA!\n"
+            "Resep tersimpan dengan Relasi Foreign Key yang benar.\n\n"
+            "Cek Firestore:\n"
+            "1. categories_Id: $_realCategoryId\n"
+            "2. category_name: $_realCategoryName (Bukan 'Umum' lagi)",
+      );
+    } catch (e) {
+      setState(() => _statusLog = "Error Input: $e");
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
+    bool isLogin = _currentUser != null;
+    bool isCategoryReady = _realCategoryId != null;
+
     return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
+      appBar: AppBar(title: const Text("Test Relasi Foreign Key")),
+      body: Padding(
+        padding: const EdgeInsets.all(20),
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Status Box
+            Container(
+              padding: const EdgeInsets.all(10),
+              color: Colors.grey[200],
+              height: 150,
+              child: SingleChildScrollView(child: Text(_statusLog)),
+            ),
+            const SizedBox(height: 20),
+
+            // Tombol 1
+            ElevatedButton(
+              onPressed: _isLoading ? null : _runLogin,
+              child: Text(isLogin ? "Sudah Login" : "1. Login User"),
+            ),
+
+            // Tombol 2
+            ElevatedButton(
+              onPressed: _isLoading ? null : _runInitAndFetchCategory,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: isCategoryReady ? Colors.green[100] : null,
+              ),
+              child: const Text("2. Ambil ID Kategori Asli (Foreign Key)"),
+            ),
+
+            // Tombol 3
+            ElevatedButton(
+              onPressed: (_isLoading || !isCategoryReady)
+                  ? null
+                  : _runInputData,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.purple,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text("3. INPUT RESEP (Valid Relation)"),
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }

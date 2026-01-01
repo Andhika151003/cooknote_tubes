@@ -27,13 +27,13 @@ class RecipesServices {
   // 2. TAMBAH RESEP BARU
   Future<void> addRecipe(Recipes recipe) async {
     try {
-      // A. Ambil Nama User dari tabel 'users' berdasarkan user_Id
-      DocumentSnapshot userDoc = await _userCollection.doc(recipe.userId).get();
+      // A. Ambil Nama User
+      DocumentSnapshot userDoc = await _userCollection.doc(recipe.idUser).get();
       String namaUser = userDoc.exists
           ? (userDoc.data() as Map)['name']
           : 'Unknown User';
 
-      // B. Ambil Nama Kategori dari tabel 'categories' berdasarkan categories_Id
+      // B. Ambil Nama Kategori
       DocumentSnapshot catDoc = await _categoryCollection
           .doc(recipe.categoriesId)
           .get();
@@ -41,13 +41,19 @@ class RecipesServices {
           ? (catDoc.data() as Map)['name']
           : 'Umum';
 
-      // C. Siapkan data gabungan
+      // --- PERUBAHAN UTAMA DI SINI ---
+
+      // 1. Buat referensi dokumen baru (Pesan ID kosong dulu)
+      DocumentReference docRef = _recipeCollection.doc();
+
+      // 2. Siapkan data, dan masukkan ID yang barusan dibuat ke dalam field 'id_Recipes'
       Map<String, dynamic> dataSimpan = recipe.toJson();
+      dataSimpan['id_Recipes'] = docRef.id; // <--- INI KUNCINYA
       dataSimpan['user_name'] = namaUser;
       dataSimpan['category_name'] = namaKategori;
 
-      // D. Simpan data lengkap ke Firestore
-      await _recipeCollection.add(dataSimpan);
+      // 3. Simpan data menggunakan .set() bukan .add()
+      await docRef.set(dataSimpan);
     } catch (e) {
       debugPrint("Error tambah resep: $e");
       rethrow;
