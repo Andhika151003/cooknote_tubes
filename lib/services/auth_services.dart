@@ -33,9 +33,11 @@ class AuthServices {
         password: password,
       );
       return result.user;
+    } on FirebaseAuthException catch (e) {
+      // Lempar error spesifik agar bisa ditangkap Controller
+      throw e.message ?? "Terjadi kesalahan pada Auth";
     } catch (e) {
-      debugPrint("Error Login: $e");
-      return null;
+      throw "Terjadi kesalahan sistem";
     }
   }
 
