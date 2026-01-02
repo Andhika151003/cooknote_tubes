@@ -76,7 +76,7 @@ class DashboardView extends StatelessWidget {
                                 top: Radius.circular(16),
                               ),
                               child: Image.network(
-                                recipe.imageurl,
+                                recipe.image_url,
                                 width: double.infinity,
                                 fit: BoxFit.cover,
                                 errorBuilder: (_, __, ___) =>
