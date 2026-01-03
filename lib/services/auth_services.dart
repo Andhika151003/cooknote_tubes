@@ -8,12 +8,10 @@ class AuthServices {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  // Mendapatkan User dari Firebase Auth
   User? getCurrentUser() {
     return _auth.currentUser;
   }
 
-  // Fungsi untuk mendapatkan data profil lengkap dari Firestore
   Future<Users?> getUserProfile(String uid) async {
     try {
       DocumentSnapshot doc = await _db.collection('users').doc(uid).get();
@@ -35,7 +33,6 @@ class AuthServices {
       debugPrint("Login berhasil: ${result.user?.email}");
       return result.user;
     } on FirebaseAuthException catch (e) {
-      // Tangani error spesifik berdasarkan error code
       debugPrint("Firebase Auth Error: ${e.code} - ${e.message}");
 
       String errorMessage;
@@ -64,8 +61,6 @@ class AuthServices {
         default:
           errorMessage = e.message ?? "Terjadi kesalahan pada Auth";
       }
-
-      // Lempar error dengan pesan yang sudah diformat
       throw errorMessage;
     } catch (e) {
       debugPrint("Error Login: $e");
@@ -75,7 +70,6 @@ class AuthServices {
 
   Future<User?> register(String name, String email, String password) async {
     try {
-      // 1. Buat akun di Firebase Authentication
       UserCredential result = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
@@ -84,7 +78,6 @@ class AuthServices {
       User? user = result.user;
 
       if (user != null) {
-        // 2. Buat objek model (Tanpa menyimpan password ke Firestore)
         Users newUser = Users(
           idUser: user.uid,
           name: name,
@@ -92,7 +85,6 @@ class AuthServices {
           createdAt: DateTime.now(),
         );
 
-        // 3. Simpan ke koleksi 'users' dengan ID Dokumen = UID User
         await _db.collection('users').doc(user.uid).set(newUser.toJson());
 
         return user;
