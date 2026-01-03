@@ -25,7 +25,7 @@ class DetailView extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(16),
               child: Image.network(
-                recipe.image_url,
+                recipe.imageUrl,
                 width: double.infinity,
                 height: 220,
                 fit: BoxFit.cover,
@@ -35,10 +35,7 @@ class DetailView extends StatelessWidget {
 
             Text(
               recipe.title,
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
 
             const SizedBox(height: 16),

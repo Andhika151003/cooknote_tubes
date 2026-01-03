@@ -32,11 +32,43 @@ class AuthServices {
         email: email,
         password: password,
       );
+      debugPrint("Login berhasil: ${result.user?.email}");
       return result.user;
     } on FirebaseAuthException catch (e) {
-      // Lempar error spesifik agar bisa ditangkap Controller
-      throw e.message ?? "Terjadi kesalahan pada Auth";
+      // Tangani error spesifik berdasarkan error code
+      debugPrint("Firebase Auth Error: ${e.code} - ${e.message}");
+
+      String errorMessage;
+      switch (e.code) {
+        case 'user-not-found':
+          errorMessage = "Email tidak terdaftar";
+          break;
+        case 'wrong-password':
+          errorMessage = "Password salah";
+          break;
+        case 'invalid-email':
+          errorMessage = "Format email tidak valid";
+          break;
+        case 'invalid-credential':
+          errorMessage = "Email atau password salah";
+          break;
+        case 'user-disabled':
+          errorMessage = "Akun telah dinonaktifkan";
+          break;
+        case 'too-many-requests':
+          errorMessage = "Terlalu banyak percobaan login. Coba lagi nanti";
+          break;
+        case 'network-request-failed':
+          errorMessage = "Tidak ada koneksi internet";
+          break;
+        default:
+          errorMessage = e.message ?? "Terjadi kesalahan pada Auth";
+      }
+
+      // Lempar error dengan pesan yang sudah diformat
+      throw errorMessage;
     } catch (e) {
+      debugPrint("Error Login: $e");
       throw "Terjadi kesalahan sistem";
     }
   }
