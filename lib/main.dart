@@ -1,24 +1,23 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart'; // Pastikan provider tetap ada (jika sudah ditambahkan sebelumnya)
+import 'package:firebase_core/firebase_core.dart';
+import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-// AKTIFKAN import ini:
+import 'firebase_options.dart';
 import './view/login_view.dart';
-// import './view/register_view.dart'; // Boleh biarkan atau matikan jika tidak dipakai di main
 import 'controller/login_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Supabase.initialize(
+    url: 'https://zbjnwmpxrsrotjpbgnjr.supabase.co',
+    anonKey: 'sb_secret_OIjyAejms4x6DyDESBk_AQ_8g9w44Eo',
+  );
 
   runApp(
-    // Bungkus root aplikasi dengan MultiProvider
     MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => LoginController()),
-        // Daftarkan controller lain di sini jika diperlukan nanti
-        // ChangeNotifierProvider(create: (_) => RegisterController()),
-      ],
+      providers: [ChangeNotifierProvider(create: (_) => LoginController())],
       child: const MyApp(),
     ),
   );
@@ -35,8 +34,8 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.green,
         primaryColor: const Color(0xFF5CB85C),
+        useMaterial3: true,
       ),
-      // GANTI bagian ini:
       home: const LoginView(),
     );
   }

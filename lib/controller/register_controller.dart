@@ -7,7 +7,6 @@ import '../services/auth_services.dart';
 class RegisterController extends ChangeNotifier {
   final AuthServices _authServices = AuthServices();
 
-  // Controller untuk 3 Input
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
@@ -18,9 +17,7 @@ class RegisterController extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  // Fungsi Register
   Future<bool> register() async {
-    // 1. Validasi Input Awal (Hemat Kuota)
     if (nameController.text.trim().isEmpty ||
         emailController.text.trim().isEmpty ||
         passwordController.text.trim().isEmpty) {
@@ -39,7 +36,6 @@ class RegisterController extends ChangeNotifier {
     _errorMessage = null;
 
     try {
-      // 2. Panggil Service Register
       User? user = await _authServices.register(
         nameController.text.trim(),
         emailController.text.trim(),
@@ -49,16 +45,13 @@ class RegisterController extends ChangeNotifier {
       _setLoading(false);
 
       if (user != null) {
-        // Sukses
         _clearControllers();
         return true;
       } else {
-        // Gagal tanpa error spesifik (biasanya email sudah ada)
         _errorMessage = "Gagal mendaftar. Kemungkinan email sudah dipakai.";
         return false;
       }
     } catch (e) {
-      // 3. Tangkap Error
       _setLoading(false);
       _errorMessage = e.toString();
       return false;

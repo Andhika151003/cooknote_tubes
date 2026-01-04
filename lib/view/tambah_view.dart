@@ -1,8 +1,9 @@
+//Tera(yang membuat ui)
+//Andhika(yang menyambungkan ke database)
+
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:image_picker/image_picker.dart';
+import '../controller/tambah_controller.dart';
 
 const Color primaryGreen = Color(0xFF4CAF50);
 
@@ -14,136 +15,232 @@ class TambahView extends StatefulWidget {
 }
 
 class _TambahViewState extends State<TambahView> {
-  final _titleCtrl = TextEditingController();
-  final _timeCtrl = TextEditingController();
-
-  String selectedCategory = "Breakfast";
-  String selectedDifficulty = "Mudah";
-
-  List<TextEditingController> ingredients = [];
-  List<TextEditingController> steps = [];
-
-  File? imageFile;
+  final AddRecipeController _controller = AddRecipeController();
+  List<TextEditingController> ingredientsCtrls = [];
+  List<TextEditingController> stepsCtrls = [];
 
   @override
   void initState() {
     super.initState();
-    ingredients.add(TextEditingController());
-    steps.add(TextEditingController());
+    ingredientsCtrls.add(TextEditingController());
+    stepsCtrls.add(TextEditingController());
   }
 
-  Future<void> pickImage() async {
-    final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (picked != null) {
-      setState(() => imageFile = File(picked.path));
+  @override
+  void dispose() {
+    _controller.dispose();
+
+    for (var c in ingredientsCtrls) c.dispose();
+    for (var c in stepsCtrls) c.dispose();
+
+    super.dispose();
+  }
+
+  void _handleSave() async {
+    if (_controller.imageFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Harap masukkan foto resep terlebih dahulu"),
+        ),
+      );
+      return;
     }
-  }
 
-  Future<void> saveRecipe() async {
-    if (_titleCtrl.text.isEmpty || imageFile == null) return;
+    String bahanString = ingredientsCtrls
+        .map((e) => e.text.trim())
+        .where((text) => text.isNotEmpty)
+        .join('\n');
 
-    final imageRef = FirebaseStorage.instance.ref(
-      'recipes/${DateTime.now().millisecondsSinceEpoch}.jpg',
-    );
+    String langkahString = stepsCtrls
+        .map((e) => e.text.trim())
+        .where((text) => text.isNotEmpty)
+        .join('\n');
 
-    await imageRef.putFile(imageFile!);
-    final imageUrl = await imageRef.getDownloadURL();
+    _controller.bahanController.text = bahanString;
+    _controller.langkahController.text = langkahString;
 
-    await FirebaseFirestore.instance.collection('recipes').add({
-      'title': _titleCtrl.text,
-      'image_url': imageUrl,
-      'category': selectedCategory,
-      'difficulty': selectedDifficulty,
-      'time': _timeCtrl.text,
-      'ingredients': ingredients.map((e) => e.text).toList(),
-      'steps': steps.map((e) => e.text).toList(),
-    });
+    final success = await _controller.saveRecipe();
 
-    Navigator.pop(context); // balik ke dashboard
+    if (mounted) {
+      // Cek widget aktif di layar
+      if (success) {
+        // Jika sukses, kembali ke dashboard
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Resep berhasil disimpan!")),
+        );
+      } else {
+        // Jika gagal, tampilkan pesan error dari controller
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_controller.errorMessage ?? "Gagal menyimpan data"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
+    return ListenableBuilder(
+      listenable: _controller,
+      builder: (context, child) {
+        return Scaffold(
+          backgroundColor: Colors.white,
 
-      appBar: AppBar(
-        title: const Text("Tambah Resep"),
-        foregroundColor: Colors.black,
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          TextButton(
-            onPressed: saveRecipe,
-            child: const Text("Simpan", style: TextStyle(color: primaryGreen)),
-          ),
-        ],
-      ),
-
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            /// UPLOAD FOTO
-            GestureDetector(
-              onTap: pickImage,
-              child: Container(
-                height: 160,
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(12),
-                  image: imageFile != null
-                      ? DecorationImage(
-                          image: FileImage(imageFile!),
-                          fit: BoxFit.cover,
-                        )
-                      : null,
-                ),
-                child: imageFile == null
-                    ? const Center(child: Text("Kteuk untuk upload foto"))
-                    : null,
+          appBar: AppBar(
+            title: const Text("Tambah Resep"),
+            foregroundColor: Colors.black,
+            backgroundColor: Colors.white,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: () => Navigator.pop(context),
+            ),
+            actions: [
+              // Tombol Simpan
+              TextButton(
+                onPressed: _controller.isLoading ? null : _handleSave,
+                child: _controller.isLoading
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text(
+                        "Simpan",
+                        style: TextStyle(
+                          color: primaryGreen,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
               ),
+            ],
+          ),
+
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                GestureDetector(
+                  onTap: () => _controller.pickImage(),
+                  child: Container(
+                    height: 180,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey[300]!),
+                      // Jika gambar sudah dipilih, tampil sebagai background
+                      image: _controller.imageFile != null
+                          ? DecorationImage(
+                              image: FileImage(_controller.imageFile!),
+                              fit: BoxFit.cover,
+                            )
+                          : null,
+                    ),
+                    // Jika belum ada gambar, tampil ikon kamera
+                    child: _controller.imageFile == null
+                        ? Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: const [
+                              Icon(
+                                Icons.add_a_photo,
+                                color: Colors.grey,
+                                size: 40,
+                              ),
+                              SizedBox(height: 8),
+                              Text(
+                                "Ketuk untuk upload foto masakan",
+                                style: TextStyle(color: Colors.grey),
+                              ),
+                            ],
+                          )
+                        : null,
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+                _input("Nama Resep", _controller.titleController),
+
+                const SizedBox(height: 16),
+
+                // Pilihan: Kategori
+                const Text(
+                  "Kategori",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                _chipGroup(
+                  ["Breakfast", "Lunch", "Dinner", "Favorite"],
+                  _controller.selectedCategory,
+                  (val) => _controller.setCategory(val),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Pilihan: Kesulitan
+                const Text(
+                  "Tingkat Kesulitan",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                _chipGroup(
+                  ["Mudah", "Sedang", "Sulit"],
+                  _controller.selectedDifficulty,
+                  (val) => _controller.setDifficulty(val),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Input: Waktu Memasak
+                _input(
+                  "Estimasi Waktu (contoh: 30 menit)",
+                  _controller.waktuController,
+                ),
+
+                const SizedBox(height: 24),
+
+                // Input Dinamis: Bahan-bahan
+                const Text(
+                  "Bahan - Bahan",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                // const Text(
+                //   "Masukkan bahan satu per satu",
+                //   style: TextStyle(fontSize: 12, color: Colors.grey),
+                // ),
+                ..._dynamicList(ingredientsCtrls, "Tambah Bahan"),
+
+                const SizedBox(height: 24),
+
+                // Input Dinamis: Langkah-langkah
+                const Text(
+                  "Langkah Memasak",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                // const Text(
+                //   "Jelaskan langkah demi langkah",
+                //   style: TextStyle(fontSize: 12, color: Colors.grey),
+                // ),
+                ..._dynamicList(stepsCtrls, "Tambah Langkah"),
+
+                const SizedBox(height: 40),
+              ],
             ),
-
-            const SizedBox(height: 16),
-            _input("Nama Resep", _titleCtrl),
-
-            const SizedBox(height: 8),
-            const Text("Kategori"),
-            _chipGroup(
-              ["Breakfast", "Lunch", "Dinner", "Favorite"],
-              selectedCategory,
-              (v) => setState(() => selectedCategory = v),
-            ),
-
-            const SizedBox(height: 8),
-            const Text("Kesulitan"),
-            _chipGroup(
-              ["Mudah", "Sedang", "Sulit"],
-              selectedDifficulty,
-              (v) => setState(() => selectedDifficulty = v),
-            ),
-
-            _input("Waktu (contoh: 20 min)", _timeCtrl),
-
-            const SizedBox(height: 12),
-            const Text("Bahan - Bahan"),
-            ..._dynamicList(ingredients, "Tambahkan Bahan"),
-
-            const SizedBox(height: 12),
-            const Text("Langkah - Langkah"),
-            ..._dynamicList(steps, "Tambahkan Langkah"),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
+  // --- WIDGET HELPER ---
+
+  // Helper untuk TextField biasa
   Widget _input(String label, TextEditingController controller) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -151,12 +248,26 @@ class _TambahViewState extends State<TambahView> {
         controller: controller,
         decoration: InputDecoration(
           labelText: label,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          filled: true,
+          fillColor: Colors.grey[50],
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey[300]!),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey[300]!),
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 16,
+          ),
         ),
       ),
     );
   }
 
+  // Helper untuk ChoiceChip (Pilihan Kategori/Kesulitan)
   Widget _chipGroup(
     List<String> items,
     String selected,
@@ -164,19 +275,32 @@ class _TambahViewState extends State<TambahView> {
   ) {
     return Wrap(
       spacing: 8,
+      runSpacing: 8,
       children: items.map((e) {
         final active = selected == e;
         return ChoiceChip(
           label: Text(e),
           selected: active,
           selectedColor: primaryGreen,
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(
+              color: active ? Colors.transparent : Colors.grey[300]!,
+            ),
+          ),
           onSelected: (_) => onTap(e),
-          labelStyle: TextStyle(color: active ? Colors.white : Colors.black),
+          labelStyle: TextStyle(
+            color: active ? Colors.white : Colors.black87,
+            fontWeight: active ? FontWeight.w600 : FontWeight.normal,
+          ),
+          elevation: active ? 2 : 0,
         );
       }).toList(),
     );
   }
 
+  // Helper untuk List Dinamis (Tombol tambah/hapus baris)
   List<Widget> _dynamicList(
     List<TextEditingController> list,
     String buttonLabel,
@@ -184,36 +308,85 @@ class _TambahViewState extends State<TambahView> {
     return [
       ...list.asMap().entries.map(
         (e) => Padding(
-          padding: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.only(top: 8),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: TextField(
-                  controller: e.value,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
+              Padding(
+                padding: const EdgeInsets.only(top: 12, right: 8),
+                child: Text(
+                  "${e.key + 1}.",
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
+              Expanded(
+                child: TextField(
+                  controller: e.value,
+                  maxLines: null,
+                  decoration: InputDecoration(
+                    hintText: "Tulis disini...",
+                    isDense: true,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
+                  ),
+                ),
+              ),
+              // Tombol Hapus (Merah)
               IconButton(
-                icon: const Icon(Icons.delete_outline),
+                icon: const Icon(
+                  Icons.remove_circle_outline,
+                  color: Colors.redAccent,
+                ),
                 onPressed: () {
-                  setState(() => list.removeAt(e.key));
+                  if (list.length > 1) {
+                    setState(() => list.removeAt(e.key));
+                  } else {
+                    e.value.clear();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Minimal harus ada satu baris data"),
+                        duration: Duration(milliseconds: 500),
+                      ),
+                    );
+                  }
                 },
               ),
             ],
           ),
         ),
       ),
-      ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: primaryGreen,
-          minimumSize: const Size(double.infinity, 44),
+
+      // Tombol Tambah Baris Baru
+      Padding(
+        padding: const EdgeInsets.only(top: 8.0),
+        child: TextButton.icon(
+          onPressed: () {
+            setState(() => list.add(TextEditingController()));
+          },
+          icon: const Icon(Icons.add_circle_outline, color: primaryGreen),
+          label: Text(
+            buttonLabel,
+            style: const TextStyle(
+              color: primaryGreen,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          style: TextButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            backgroundColor: Colors.green[50],
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
         ),
-        onPressed: () {
-          setState(() => list.add(TextEditingController()));
-        },
-        child: Text("+ $buttonLabel"),
       ),
     ];
   }

@@ -8,8 +8,6 @@ class CategoriesServices {
   final CollectionReference _categoryCollection = FirebaseFirestore.instance
       .collection('categories');
 
-  // 1. GET ALL CATEGORIES (Stream)
-  // Dipakai untuk menampilkan list kategori di DropdownMenu atau Filter
   Stream<List<Categories>> getCategories() {
     return _categoryCollection.snapshots().map((snapshot) {
       return snapshot.docs.map((doc) {
@@ -22,7 +20,6 @@ class CategoriesServices {
     });
   }
 
-  // 2. TAMBAH KATEGORI (Manual)
   Future<void> addCategory(String namaKategori) async {
     try {
       await _categoryCollection.add({
@@ -35,7 +32,6 @@ class CategoriesServices {
     }
   }
 
-  // 3. AUTO-GENERATE KATEGORI (Fitur Spesial)
   Future<void> initDefaultCategories() async {
     try {
       var snapshot = await _categoryCollection.limit(1).get();

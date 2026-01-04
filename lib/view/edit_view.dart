@@ -1,4 +1,4 @@
-// lib/view/edit_view.dart
+// Andhika
 
 import 'package:flutter/material.dart';
 import '../models/recipes_model.dart';
@@ -144,7 +144,7 @@ class _EditViewState extends State<EditView> {
             const SizedBox(height: 8),
             TextField(
               controller: _controller.bahanController,
-              maxLines: 5, // Bisa enter kebawah
+              maxLines: 5,
               decoration: InputDecoration(
                 hintText: "Masukkan bahan...",
                 border: OutlineInputBorder(

@@ -31,10 +31,9 @@ class ProfileController extends ChangeNotifier {
     }
   }
 
-  // Fungsi Logout
   Future<void> logout() async {
     await _authServices.logout();
-    _userProfile = null; // Hapus data di memori
+    _userProfile = null;
     notifyListeners();
   }
 }

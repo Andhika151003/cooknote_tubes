@@ -17,7 +17,6 @@ class LoginController extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
 
   Future<bool> login() async {
-    // 1. Validasi Dulu
     if (emailController.text.isEmpty || passwordController.text.isEmpty) {
       _errorMessage = "Email dan Password tidak boleh kosong.";
       notifyListeners();
@@ -28,7 +27,6 @@ class LoginController extends ChangeNotifier {
     _errorMessage = null;
 
     try {
-      // Panggil service
       User? user = await _authServices.login(
         emailController.text.trim(),
         passwordController.text.trim(),
@@ -42,9 +40,8 @@ class LoginController extends ChangeNotifier {
       }
       return false;
     } catch (e) {
-      // 2. Tangkap pesan error ASLI dari Firebase (misal: "No user found", "Network error")
       _setLoading(false);
-      _errorMessage = e.toString(); // Pesan error jadi lebih akurat
+      _errorMessage = e.toString();
       return false;
     }
   }

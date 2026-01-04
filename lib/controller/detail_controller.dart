@@ -13,7 +13,6 @@ class DetailRecipeController extends ChangeNotifier {
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
-  // 1. FUNGSI CEK PEMILIK (PENTING!)
   bool isOwner(String idPembuatResep) {
     User? currentUser = _authServices.getCurrentUser();
     if (currentUser == null) return false;
@@ -21,20 +20,18 @@ class DetailRecipeController extends ChangeNotifier {
     return currentUser.uid == idPembuatResep;
   }
 
-  // 2. FUNGSI HAPUS RESEP
   Future<bool> deleteRecipe(Recipes recipe) async {
     _setLoading(true);
 
     try {
-      // Panggil Service untuk hapus data di Firestore
       await _recipesServices.deleteRecipe(recipe);
 
       _setLoading(false);
-      return true; // Berhasil dihapus
+      return true;
     } catch (e) {
       debugPrint("Gagal menghapus resep: $e");
       _setLoading(false);
-      return false; // Gagal
+      return false;
     }
   }
 

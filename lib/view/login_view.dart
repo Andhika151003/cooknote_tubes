@@ -88,7 +88,7 @@ class _LoginViewState extends State<LoginView> {
                       ),
                       const SizedBox(height: 40),
 
-                      // Tampilkan Error Message jika ada
+                      // Menampilkan Error Message
                       if (controller.errorMessage != null)
                         Container(
                           padding: const EdgeInsets.all(10),
@@ -213,8 +213,7 @@ class _LoginViewState extends State<LoginView> {
                                     Navigator.pushReplacement(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) =>
-                                            DashboardView(recipes: []),
+                                        builder: (_) => const DashboardView(),
                                       ),
                                     );
                                   }
