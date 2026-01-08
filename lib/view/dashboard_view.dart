@@ -1,9 +1,11 @@
-//Tera(Membuat tampilan dashboard)
-//Andhika(Menyambungkan kedalam controller)
+// Tera(Membuat tampilan dashboard)
+// Andhika(Menyambungkan kedalam controller)
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/recipes_model.dart';
 import '../controller/navigation_controller.dart';
+import '../controller/detail_controller.dart';
 import 'detail_view.dart';
 import 'tambah_view.dart';
 import 'profile_view.dart';
@@ -41,7 +43,7 @@ class _DashboardViewState extends State<DashboardView> {
                   ),
                   backgroundColor: Colors.white,
                   elevation: 0,
-                  automaticallyImplyLeading: false, //
+                  automaticallyImplyLeading: false,
                 )
               : null,
 
@@ -142,19 +144,27 @@ class _DashboardViewState extends State<DashboardView> {
                     childAspectRatio: 0.75,
                   ),
                   itemBuilder: (context, index) {
-                    // Konversi data Firestore ke Model Recipes
-                    final docData =
-                        dataDocs[index].data() as Map<String, dynamic>;
-                    // docData['id_Recipes'] = dataDocs[index].id;
+                    // AMBIL ID DOKUMEN AGAR BISA DIHAPUS/EDIT
+                    // Kita gunakan Map.from agar aman memodifikasi data
+                    final docData = Map<String, dynamic>.from(
+                      dataDocs[index].data() as Map<String, dynamic>,
+                    );
+
+                    docData['id_Recipes'] = dataDocs[index].id;
 
                     final recipe = Recipes.fromJson(docData);
 
                     return GestureDetector(
                       onTap: () {
+                        // [PERBAIKAN UTAMA DI SINI]
+                        // Kita pasang Provider di sini agar DetailView tidak error
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => DetailView(recipe: recipe),
+                            builder: (_) => ChangeNotifierProvider(
+                              create: (_) => DetailRecipeController(),
+                              child: DetailView(recipe: recipe),
+                            ),
                           ),
                         );
                       },
@@ -179,32 +189,45 @@ class _DashboardViewState extends State<DashboardView> {
                                 borderRadius: const BorderRadius.vertical(
                                   top: Radius.circular(16),
                                 ),
-                                child: Image.network(
-                                  recipe.imageUrl,
-                                  width: double.infinity,
-                                  fit: BoxFit.cover,
-                                  loadingBuilder: (ctx, child, progress) {
-                                    if (progress == null) return child;
-                                    return Center(
-                                      child: CircularProgressIndicator(
-                                        value:
-                                            progress.expectedTotalBytes != null
-                                            ? progress.cumulativeBytesLoaded /
-                                                  progress.expectedTotalBytes!
-                                            : null,
+                                child: recipe.imageUrl.isNotEmpty
+                                    ? Image.network(
+                                        recipe.imageUrl,
+                                        width: double.infinity,
+                                        fit: BoxFit.cover,
+                                        loadingBuilder: (ctx, child, progress) {
+                                          if (progress == null) return child;
+                                          return Center(
+                                            child: CircularProgressIndicator(
+                                              value:
+                                                  progress.expectedTotalBytes !=
+                                                      null
+                                                  ? progress.cumulativeBytesLoaded /
+                                                        progress
+                                                            .expectedTotalBytes!
+                                                  : null,
+                                            ),
+                                          );
+                                        },
+                                        errorBuilder: (_, __, ___) => Container(
+                                          color: Colors.grey[200],
+                                          child: const Center(
+                                            child: Icon(
+                                              Icons.broken_image,
+                                              color: Colors.grey,
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                    : Container(
+                                        // Tampilan jika URL kosong
+                                        color: Colors.grey[200],
+                                        child: const Center(
+                                          child: Icon(
+                                            Icons.image_not_supported,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
                                       ),
-                                    );
-                                  },
-                                  errorBuilder: (_, __, ___) => Container(
-                                    color: Colors.grey[200],
-                                    child: const Center(
-                                      child: Icon(
-                                        Icons.broken_image,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                  ),
-                                ),
                               ),
                             ),
 

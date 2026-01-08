@@ -18,7 +18,7 @@ class DetailView extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      floatingActionButton: isOwner 
+      floatingActionButton: isOwner
           ? Column(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -28,7 +28,9 @@ class DetailView extends StatelessWidget {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => EditView(recipe: recipe)),
+                      MaterialPageRoute(
+                        builder: (context) => EditView(recipe: recipe),
+                      ),
                     );
                   },
                   child: const Icon(Icons.edit, color: Colors.white),
@@ -60,7 +62,7 @@ class DetailView extends StatelessWidget {
               background: Image.network(
                 recipe.imageUrl,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => 
+                errorBuilder: (context, error, stackTrace) =>
                     const Center(child: Icon(Icons.broken_image, size: 50)),
               ),
             ),
@@ -79,25 +81,40 @@ class DetailView extends StatelessWidget {
                 children: [
                   Text(
                     recipe.title,
-                    style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      const Icon(Icons.person_outline, size: 16, color: Colors.grey),
+                      const Icon(
+                        Icons.person_outline,
+                        size: 16,
+                        color: Colors.grey,
+                      ),
                       const SizedBox(width: 4),
-                      Text("oleh: ${recipe.userName ?? 'User'}", 
-                           style: const TextStyle(color: Colors.grey, fontSize: 14)),
+                      Text(
+                        "oleh: ${recipe.userName ?? 'User'}",
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 14,
+                        ),
+                      ),
                     ],
                   ),
                   const Divider(height: 40),
 
-                  
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       _buildInfoTile(Icons.access_time, "Waktu", recipe.waktu),
-                      _buildInfoTile(Icons.restaurant_menu, "Kesulitan", recipe.kesulitan),
+                      _buildInfoTile(
+                        Icons.restaurant_menu,
+                        "Kesulitan",
+                        recipe.kesulitan,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 30),
@@ -111,8 +128,8 @@ class DetailView extends StatelessWidget {
                   _buildTitle("Langkah - Langkah"),
                   const SizedBox(height: 12),
                   _buildContentBox(recipe.langkah),
-                  
-                  const SizedBox(height: 100), 
+
+                  const SizedBox(height: 100),
                 ],
               ),
             ),
@@ -126,9 +143,9 @@ class DetailView extends StatelessWidget {
     return Text(
       title,
       style: const TextStyle(
-        fontSize: 18, 
-        fontWeight: FontWeight.bold, 
-        color: Color.fromARGB(255, 0, 0, 0)
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+        color: Color.fromARGB(255, 0, 0, 0),
       ),
     );
   }
@@ -164,20 +181,26 @@ class DetailView extends StatelessWidget {
     );
   }
 
-  void _showDeleteConfirmation(BuildContext context, DetailRecipeController controller) {
+  void _showDeleteConfirmation(
+    BuildContext context,
+    DetailRecipeController controller,
+  ) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text("Hapus Resep?"),
         content: const Text("Tindakan ini tidak bisa dibatalkan."),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Batal")),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Batal"),
+          ),
           TextButton(
             onPressed: () async {
               bool ok = await controller.deleteRecipe(recipe);
               if (ok && context.mounted) {
-                Navigator.pop(context); 
-                Navigator.pop(context); 
+                Navigator.pop(context);
+                Navigator.pop(context);
               }
             },
             child: const Text("Hapus", style: TextStyle(color: Colors.red)),
