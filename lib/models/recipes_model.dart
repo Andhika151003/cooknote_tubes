@@ -1,4 +1,3 @@
-//Andhika
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Recipes {
@@ -35,36 +34,38 @@ class Recipes {
   factory Recipes.fromJson(Map<String, dynamic> json) {
     return Recipes(
       idRecipes: json['id_Recipes'] ?? '',
-      idUser: json['Id_User'] ?? '',
-      title: json['title'],
-      categoriesId: json['categories_Id'] ?? '',
+      // KITA SAMAKAN SEMUA KEY:
+      idUser: json['id_User'] ?? '', // Huruf kecil semua & snake_case
+      title: json['title'] ?? 'Tanpa Judul',
+      categoriesId: json['categoriesId'] ?? '',
       bahan: json['bahan'] ?? '',
       langkah: json['langkah'] ?? '',
-      waktu: json['waktu'] ?? '',
-      kesulitan: json['kesulitan'] ?? '',
-      imageUrl: json['image_url'] ?? '',
+      waktu: json['waktu'] ?? '-',
+      kesulitan: json['kesulitan'] ?? 'Sedang',
+      imageUrl: json['imageUrl'] ?? '', // Gunakan camelCase (sesuai toJson)
+
       createdAt: json['createdAt'] is Timestamp
           ? (json['createdAt'] as Timestamp).toDate()
           : DateTime.now(),
       uploadedAt: json['uploadedAt'] is Timestamp
           ? (json['uploadedAt'] as Timestamp).toDate()
           : DateTime.now(),
-      userName: json['user_name'] ?? 'User Tidak Dikenal',
-      categoryName: json['category_name'] ?? 'Tanpa Kategori',
+      userName: json['user_name'] ?? 'User',
+      categoryName: json['category_name'] ?? '',
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id_Recipes': idRecipes,
-      'id_User': idUser,
+      'id_User': idUser, // Konsisten: id_User
       'title': title,
       'categoriesId': categoriesId,
       'bahan': bahan,
       'langkah': langkah,
       'waktu': waktu,
       'kesulitan': kesulitan,
-      'imageUrl': imageUrl,
+      'imageUrl': imageUrl, // Konsisten: imageUrl
       'createdAt': createdAt,
       'uploadedAt': uploadedAt,
       'user_name': userName,

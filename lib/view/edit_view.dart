@@ -1,5 +1,6 @@
 // Andhika
 
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../models/recipes_model.dart';
 import '../controller/edit_controller.dart';
@@ -17,14 +18,17 @@ class EditView extends StatefulWidget {
 
 class _EditViewState extends State<EditView> {
   final EditRecipeController _controller = EditRecipeController();
+
   final List<String> categories = ["Breakfast", "Lunch", "Dinner", "Favorite"];
+  // [BARU] Daftar pilihan kesulitan
+  final List<String> difficulties = ["Mudah", "Sedang", "Sulit"];
 
   @override
   void initState() {
     super.initState();
     _controller.loadExistingData(widget.recipe);
     _controller.addListener(() {
-      setState(() {});
+      if (mounted) setState(() {});
     });
   }
 
@@ -89,23 +93,61 @@ class _EditViewState extends State<EditView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              height: 160,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(12),
-                image: DecorationImage(
-                  image: NetworkImage(widget.recipe.imageUrl),
-                  fit: BoxFit.cover,
+            // --- BAGIAN GAMBAR ---
+            GestureDetector(
+              onTap: () => _controller.pickImage(),
+              child: Container(
+                height: 200,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[300]!),
+                ),
+                clipBehavior: Clip.hardEdge,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    if (_controller.newImageFile != null)
+                      Image.file(_controller.newImageFile!, fit: BoxFit.cover)
+                    else if (_controller.oldImageUrl != null &&
+                        _controller.oldImageUrl!.isNotEmpty)
+                      Image.network(
+                        _controller.oldImageUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (ctx, _, __) => const Center(
+                          child: Icon(Icons.broken_image, color: Colors.grey),
+                        ),
+                      )
+                    else
+                      const Center(
+                        child: Icon(
+                          Icons.add_a_photo,
+                          size: 40,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    Container(
+                      color: Colors.black.withOpacity(0.1),
+                      child: const Center(
+                        child: Icon(
+                          Icons.camera_alt,
+                          color: Colors.white54,
+                          size: 40,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-
             const SizedBox(height: 16),
-            _input("Nama Resep", _controller.titleController),
 
+            // --- NAMA RESEP ---
+            _input("Nama Resep", _controller.titleController),
             const SizedBox(height: 8),
+
+            // --- KATEGORI ---
             const Text(
               "Kategori",
               style: TextStyle(fontWeight: FontWeight.bold),
@@ -124,19 +166,44 @@ class _EditViewState extends State<EditView> {
                     color: isSelected ? Colors.white : Colors.black,
                   ),
                   onSelected: (bool selected) {
-                    if (selected) {
-                      _controller.setCategory(cat);
-                    }
+                    if (selected) _controller.setCategory(cat);
                   },
                 );
               }).toList(),
             ),
-
             const SizedBox(height: 16),
-            _input("Waktu (contoh: 20 min)", _controller.waktuController),
 
+            // --- [BARU] TINGKAT KESULITAN ---
+            const Text(
+              "Tingkat Kesulitan",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              children: difficulties.map((diff) {
+                final isSelected = _controller.selectedDifficulty == diff;
+                return ChoiceChip(
+                  label: Text(diff),
+                  selected: isSelected,
+                  selectedColor: primaryGreen,
+                  backgroundColor: Colors.grey[200],
+                  labelStyle: TextStyle(
+                    color: isSelected ? Colors.white : Colors.black,
+                  ),
+                  onSelected: (bool selected) {
+                    if (selected) _controller.setDifficulty(diff);
+                  },
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 16),
+
+            // --- WAKTU ---
+            _input("Waktu (contoh: 20 min)", _controller.waktuController),
             const SizedBox(height: 12),
 
+            // --- BAHAN ---
             const Text(
               "Bahan - Bahan",
               style: TextStyle(fontWeight: FontWeight.bold),
@@ -153,8 +220,9 @@ class _EditViewState extends State<EditView> {
                 alignLabelWithHint: true,
               ),
             ),
-
             const SizedBox(height: 12),
+
+            // --- LANGKAH ---
             const Text(
               "Langkah - Langkah",
               style: TextStyle(fontWeight: FontWeight.bold),
