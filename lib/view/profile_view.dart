@@ -1,5 +1,5 @@
-//Tera (Membuat Tampilan profile)
-//Andhika (Menyambungkan kedalam backend)
+// Tera (Membuat Tampilan profile)
+// Andhika (Menyambungkan kedalam backend)
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -9,6 +9,51 @@ import 'login_view.dart';
 
 class ProfileView extends StatelessWidget {
   const ProfileView({super.key});
+
+  // [BARU] Fungsi untuk menampilkan Dialog Konfirmasi
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Konfirmasi Logout"),
+          content: const Text("Apakah Anda yakin ingin keluar?"),
+          actions: [
+            // Tombol Batal
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Batal"),
+            ),
+            // Tombol Keluar (Merah)
+            TextButton(
+              onPressed: () async {
+                // Tutup Dialog
+                Navigator.pop(context);
+
+                // Lakukan Logout
+                await AuthServices().logout();
+
+                // Pindah ke Halaman Login
+                if (context.mounted) {
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (context) => const LoginView()),
+                    (route) => false,
+                  );
+                }
+              },
+              child: const Text(
+                "Keluar",
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,15 +72,8 @@ class ProfileView extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.red),
-            onPressed: () async {
-              await AuthServices().logout();
-              if (context.mounted) {
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (context) => const LoginView()),
-                  (route) => false,
-                );
-              }
-            },
+            // [MODIFIKASI] Panggil dialog saat ditekan
+            onPressed: () => _showLogoutDialog(context),
           ),
         ],
       ),
@@ -90,7 +128,6 @@ class ProfileView extends StatelessWidget {
                   value: email,
                   icon: Icons.email,
                 ),
-
                 const SizedBox(height: 16),
                 _buildProfileItem(
                   title: "Nama Pengguna",

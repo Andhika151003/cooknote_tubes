@@ -28,7 +28,7 @@ class DetailView extends StatelessWidget {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(
-              child: CircularProgressIndicator(color: Color(0xFFFF8A00)),
+              child: CircularProgressIndicator(color: Color(0xFF4CAF50)),
             ),
           );
         }
@@ -42,7 +42,6 @@ class DetailView extends StatelessWidget {
         }
 
         // 3. KONVERSI DATA TERBARU (LIVE)
-        // Kita abaikan data lama 'recipe', kita pakai data baru dari snapshot
         final docData = snapshot.data!.data() as Map<String, dynamic>;
         docData['id_Recipes'] = snapshot.data!.id; // Pastikan ID terbawa
 
@@ -51,6 +50,12 @@ class DetailView extends StatelessWidget {
 
         // Cek apakah user yang login adalah pemilik resep ini
         final bool isOwner = controller.isOwner(liveRecipe.idUser);
+
+        // --- LOGIKA SMART DISPLAY KATEGORI ---
+        String displayKategori = liveRecipe.categoryName ?? '-';
+        if (displayKategori == 'Umum' || displayKategori.isEmpty) {
+          displayKategori = liveRecipe.categoriesId;
+        }
 
         return Scaffold(
           backgroundColor: Colors.white,
@@ -62,9 +67,8 @@ class DetailView extends StatelessWidget {
                   children: [
                     FloatingActionButton(
                       heroTag: 'edit_btn',
-                      backgroundColor: const Color(0xFFFF8A00),
+                      backgroundColor: const Color(0xFF4CAF50),
                       onPressed: () {
-                        // Buka halaman Edit dengan data terbaru (liveRecipe)
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -72,7 +76,7 @@ class DetailView extends StatelessWidget {
                           ),
                         );
                       },
-                      child: const Icon(Icons.edit, color: Colors.white),
+                      child: const Icon(Icons.edit, color: Colors.black),
                     ),
                     const SizedBox(height: 12),
                     FloatingActionButton(
@@ -95,7 +99,7 @@ class DetailView extends StatelessWidget {
               SliverAppBar(
                 expandedHeight: 300,
                 pinned: true,
-                backgroundColor: const Color(0xFFFF8A00),
+                backgroundColor: const Color(0xFF4CAF50),
                 leading: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: CircleAvatar(
@@ -128,7 +132,7 @@ class DetailView extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Judul
+                      // Judul Resep
                       Text(
                         liveRecipe.title,
                         style: const TextStyle(
@@ -138,27 +142,29 @@ class DetailView extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
 
-                      // Nama Pembuat
+                      // Kategori (Posisi di bawah Judul)
                       Row(
                         children: [
                           const Icon(
-                            Icons.person_outline,
-                            size: 16,
+                            Icons.category_outlined,
+                            size: 18,
                             color: Colors.grey,
                           ),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: 6),
                           Text(
-                            "oleh: ${liveRecipe.userName ?? 'User'}",
+                            displayKategori,
                             style: const TextStyle(
                               color: Colors.grey,
-                              fontSize: 14,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ],
                       ),
+
                       const Divider(height: 40),
 
-                      // Info Waktu & Kesulitan
+                      // Info Row (Waktu & Kesulitan)
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
@@ -176,17 +182,17 @@ class DetailView extends StatelessWidget {
                       ),
                       const SizedBox(height: 30),
 
-                      // Bahan
+                      // --- BAHAN - BAHAN (Tampilan Baru) ---
                       _buildTitle("Bahan - Bahan"),
                       const SizedBox(height: 12),
-                      _buildContentBox(liveRecipe.bahan),
+                      _buildStepList(liveRecipe.bahan),
 
                       const SizedBox(height: 25),
 
-                      // Langkah
+                      // --- LANGKAH - LANGKAH (Tampilan Baru) ---
                       _buildTitle("Langkah - Langkah"),
                       const SizedBox(height: 12),
-                      _buildContentBox(liveRecipe.langkah),
+                      _buildStepList(liveRecipe.langkah),
 
                       const SizedBox(
                         height: 100,
@@ -224,25 +230,91 @@ class DetailView extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Icon(icon, color: const Color(0xFFFF8A00)),
+          Icon(icon, color: const Color(0xFF4CAF50)),
           const SizedBox(height: 4),
           Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+          Text(
+            value,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            textAlign: TextAlign.center,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildContentBox(String text) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[100]!),
-      ),
-      child: Text(text, style: const TextStyle(fontSize: 15, height: 1.6)),
+  // [BARU] Widget untuk membuat daftar langkah/bahan yang rapi
+  Widget _buildStepList(String rawText) {
+    // 1. Pecah teks berdasarkan Enter (\n)
+    List<String> items = rawText.split('\n');
+
+    // 2. Hapus baris kosong (jika ada user yang enter 2x)
+    items = items.where((item) => item.trim().isNotEmpty).toList();
+
+    if (items.isEmpty) {
+      return const Text("-", style: TextStyle(color: Colors.grey));
+    }
+
+    // 3. Tampilkan sebagai List
+    return Column(
+      children: List.generate(items.length, (index) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12.0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Lingkaran Nomer
+              Container(
+                width: 28,
+                height: 28,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF4CAF50), // Warna oranye tema
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.green.withOpacity(0.4),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Text(
+                  "${index + 1}",
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+
+              // Kotak Teks (Mirip TextField)
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[50], // Background agak abu terang
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.grey[300]!,
+                    ), // Garis tepi halus
+                  ),
+                  child: Text(
+                    items[index].trim(),
+                    style: const TextStyle(
+                      fontSize: 15,
+                      height: 1.5,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }),
     );
   }
 

@@ -19,26 +19,72 @@ class EditView extends StatefulWidget {
 class _EditViewState extends State<EditView> {
   final EditRecipeController _controller = EditRecipeController();
 
+  // [BARU] List Controller untuk menangani input dinamis
+  List<TextEditingController> ingredientsCtrls = [];
+  List<TextEditingController> stepsCtrls = [];
+
   final List<String> categories = ["Breakfast", "Lunch", "Dinner", "Favorite"];
-  // [BARU] Daftar pilihan kesulitan
   final List<String> difficulties = ["Mudah", "Sedang", "Sulit"];
 
   @override
   void initState() {
     super.initState();
+    // 1. Load data dasar (Judul, Waktu, Gambar, Kategori)
     _controller.loadExistingData(widget.recipe);
+
+    // 2. [BARU] Load & Pecah data Bahan menjadi list controller
+    _initListFromText(widget.recipe.bahan, ingredientsCtrls);
+
+    // 3. [BARU] Load & Pecah data Langkah menjadi list controller
+    _initListFromText(widget.recipe.langkah, stepsCtrls);
+
     _controller.addListener(() {
       if (mounted) setState(() {});
     });
   }
 
+  // Helper untuk memecah teks database (\n) menjadi List Controller
+  void _initListFromText(String content, List<TextEditingController> list) {
+    if (content.isEmpty) {
+      list.add(TextEditingController());
+    } else {
+      List<String> splitData = content.split('\n');
+      for (var item in splitData) {
+        if (item.trim().isNotEmpty) {
+          list.add(TextEditingController(text: item.trim()));
+        }
+      }
+      // Jaga-jaga jika hasil split kosong semua
+      if (list.isEmpty) list.add(TextEditingController());
+    }
+  }
+
   @override
   void dispose() {
     _controller.dispose();
+    // Bersihkan controller list manual
+    for (var c in ingredientsCtrls) c.dispose();
+    for (var c in stepsCtrls) c.dispose();
     super.dispose();
   }
 
   void _handleSave() async {
+    // 1. [BARU] Gabungkan List Controller kembali menjadi String
+    String joinedBahan = ingredientsCtrls
+        .map((e) => e.text.trim())
+        .where((text) => text.isNotEmpty)
+        .join('\n');
+
+    String joinedLangkah = stepsCtrls
+        .map((e) => e.text.trim())
+        .where((text) => text.isNotEmpty)
+        .join('\n');
+
+    // 2. Masukkan ke controller utama sebelum update
+    _controller.bahanController.text = joinedBahan;
+    _controller.langkahController.text = joinedLangkah;
+
+    // 3. Jalankan proses update
     bool success = await _controller.updateRecipe(
       widget.recipe.idRecipes,
       widget.recipe.idUser,
@@ -173,7 +219,7 @@ class _EditViewState extends State<EditView> {
             ),
             const SizedBox(height: 16),
 
-            // --- [BARU] TINGKAT KESULITAN ---
+            // --- TINGKAT KESULITAN ---
             const Text(
               "Tingkat Kesulitan",
               style: TextStyle(fontWeight: FontWeight.bold),
@@ -201,49 +247,34 @@ class _EditViewState extends State<EditView> {
 
             // --- WAKTU ---
             _input("Waktu (contoh: 20 min)", _controller.waktuController),
-            const SizedBox(height: 12),
+            const SizedBox(height: 20),
 
-            // --- BAHAN ---
+            // --- BAHAN (DYNAMIC LIST) ---
             const Text(
               "Bahan - Bahan",
-              style: TextStyle(fontWeight: FontWeight.bold),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _controller.bahanController,
-              maxLines: 5,
-              decoration: InputDecoration(
-                hintText: "Masukkan bahan...",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                alignLabelWithHint: true,
-              ),
-            ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 4),
+            ..._dynamicList(ingredientsCtrls, "Tambah Bahan"),
 
-            // --- LANGKAH ---
+            const SizedBox(height: 24),
+
+            // --- LANGKAH (DYNAMIC LIST) ---
             const Text(
               "Langkah - Langkah",
-              style: TextStyle(fontWeight: FontWeight.bold),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _controller.langkahController,
-              maxLines: 5,
-              decoration: InputDecoration(
-                hintText: "Masukkan langkah pembuatan...",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                alignLabelWithHint: true,
-              ),
-            ),
+            const SizedBox(height: 4),
+            ..._dynamicList(stepsCtrls, "Tambah Langkah"),
+
+            const SizedBox(height: 50),
           ],
         ),
       ),
     );
   }
+
+  // --- WIDGET HELPER ---
 
   Widget _input(String label, TextEditingController controller) {
     return Padding(
@@ -256,5 +287,96 @@ class _EditViewState extends State<EditView> {
         ),
       ),
     );
+  }
+
+  // [BARU] Widget untuk Input Dinamis (Sama seperti TambahView)
+  List<Widget> _dynamicList(
+    List<TextEditingController> list,
+    String buttonLabel,
+  ) {
+    return [
+      ...list.asMap().entries.map(
+        (e) => Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 12, right: 8),
+                child: Text(
+                  "${e.key + 1}.",
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: TextField(
+                  controller: e.value,
+                  maxLines: null,
+                  decoration: InputDecoration(
+                    hintText: "Tulis disini...",
+                    isDense: true,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
+                  ),
+                ),
+              ),
+              // Tombol Hapus (Merah)
+              IconButton(
+                icon: const Icon(
+                  Icons.remove_circle_outline,
+                  color: Colors.redAccent,
+                ),
+                onPressed: () {
+                  if (list.length > 1) {
+                    setState(() => list.removeAt(e.key));
+                  } else {
+                    e.value.clear();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Minimal harus ada satu baris data"),
+                        duration: Duration(milliseconds: 500),
+                      ),
+                    );
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+
+      // Tombol Tambah Baris Baru
+      Padding(
+        padding: const EdgeInsets.only(top: 8.0),
+        child: TextButton.icon(
+          onPressed: () {
+            setState(() => list.add(TextEditingController()));
+          },
+          icon: const Icon(Icons.add_circle_outline, color: primaryGreen),
+          label: Text(
+            buttonLabel,
+            style: const TextStyle(
+              color: primaryGreen,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          style: TextButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            backgroundColor: Colors.green[50],
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        ),
+      ),
+    ];
   }
 }
