@@ -46,6 +46,28 @@ class LoginController extends ChangeNotifier {
     }
   }
 
+  Future<bool> loginWithGoogle() async {
+    _setLoading(true);
+    _errorMessage = null;
+
+    try {
+      User? user = await _authServices.signInWithGoogle();
+
+      _setLoading(false);
+
+      if (user != null) {
+        _clearControllers(); // Opsional: bersihkan form email/pass
+        return true;
+      }
+      return false; // User cancel atau gagal
+    } catch (e) {
+      _setLoading(false);
+      _errorMessage = "Gagal masuk dengan Google";
+      notifyListeners();
+      return false;
+    }
+  }
+
   void _setLoading(bool value) {
     _isLoading = value;
     notifyListeners();

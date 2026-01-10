@@ -52,7 +52,7 @@ class _LoginViewState extends State<LoginView> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       const SizedBox(height: 40),
-                      // Logo
+                      // --- LOGO (MODIFIKASI DI SINI) ---
                       Center(
                         child: Container(
                           width: 120,
@@ -62,14 +62,19 @@ class _LoginViewState extends State<LoginView> {
                             shape: BoxShape.circle,
                           ),
                           child: Center(
-                            child: Icon(
-                              Icons.soup_kitchen_rounded,
-                              size: 70,
-                              color: Colors.green[800],
+                            child: Padding(
+                              padding: const EdgeInsets.all(
+                                20.0,
+                              ), // Padding agar gambar tidak mepet
+                              child: Image.asset(
+                                'lib/assets/images/cooking.png', // Path gambar Anda
+                                fit: BoxFit.contain,
+                              ),
                             ),
                           ),
                         ),
                       ),
+                      // ---------------------------------
                       const SizedBox(height: 32),
                       const Text(
                         'SELAMAT DATANG DI COOKNOTE',
@@ -209,7 +214,6 @@ class _LoginViewState extends State<LoginView> {
                                         backgroundColor: Colors.green,
                                       ),
                                     );
-                                    // TODO: Navigate ke home/dashboard
                                     Navigator.pushReplacement(
                                       context,
                                       MaterialPageRoute(
@@ -245,6 +249,59 @@ class _LoginViewState extends State<LoginView> {
                               ),
                       ),
 
+                      const SizedBox(height: 16),
+
+                      // --- TOMBOL GOOGLE SIGN IN ---
+                      OutlinedButton(
+                        onPressed: controller.isLoading
+                            ? null
+                            : () async {
+                                bool success = await controller
+                                    .loginWithGoogle();
+                                if (success && context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text("Login Google Berhasil!"),
+                                      backgroundColor: Colors.green,
+                                    ),
+                                  );
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const DashboardView(),
+                                    ),
+                                  );
+                                }
+                              },
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          side: BorderSide(color: Colors.grey[300]!),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Image.asset(
+                              'lib/assets/images/google.png', // Path Gambar Google
+                              height: 24,
+                              width: 24,
+                            ),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'Masuk dengan Google',
+                              style: TextStyle(
+                                color: Colors.black87,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // ----------------------------------
                       const SizedBox(height: 16),
 
                       // Register Link

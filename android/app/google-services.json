@@ -13,7 +13,20 @@
           "package_name": "com.example.cooknote"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "893950515224-69au5jsnd3p7ei5hbnvq272qnrvlb5i3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.cooknote",
+            "certificate_hash": "580d5f047340b4feb12f21b84a5e67413ddc942d"
+          }
+        },
+        {
+          "client_id": "893950515224-9fkrcijm5io80q1ib3olk3jkbjk8io1f.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBMqSFvbQaVRsEEou-1H906RpPAAdHQtMY"
@@ -21,7 +34,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "893950515224-9fkrcijm5io80q1ib3olk3jkbjk8io1f.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "893950515224-jjvb8thas8bnn0s2ioh47hdlp8o4ojhl.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.cooknote"
+              }
+            }
+          ]
         }
       }
     }

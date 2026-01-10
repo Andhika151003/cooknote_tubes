@@ -41,6 +41,7 @@ dependencies:
   image_picker: ^1.2.1
   provider: ^6.1.5+1
   supabase_flutter: ^2.12.0
+  google_sign_in: ^6.2.1
 
 dev_dependencies:
   flutter_test:
@@ -63,6 +64,10 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  assets:
+    - lib/assets/images/google.png
+    - lib/assets/images/cooking.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:
